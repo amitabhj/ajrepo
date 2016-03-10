@@ -78,3 +78,5 @@ end
 
 close curse
 deallocate curse
+
+1
