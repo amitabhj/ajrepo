@@ -1,0 +1,80 @@
+
+-- CHANGE THE NAME OF THE DATABASE REFERENCES EVERYWHERE
+USE NEW_COMMUNICATOR_TEST
+GO
+
+IF 	NOT EXISTS 
+	(
+		SELECT 	* 
+		FROM 	master.dbo.syslogins 
+		WHERE 	loginname = N'BOARDWALK_APPLICATION_USER'
+	)
+	BEGIN
+		DECLARE 	@logindb NVARCHAR(132), @loginlang NVARCHAR(132) 
+		SELECT 	@logindb = N'NEW_COMMUNICATOR_TEST', @loginlang = N'us_english'
+		EXEC 	sp_addlogin N'BOARDWALK_APPLICATION_USER', 'BOARDWALK_APPLICATION_USER', @logindb, @loginlang
+END
+GO
+
+EXEC sp_addsrvrolemember N'BOARDWALK_APPLICATION_USER', sysadmin
+GO
+
+EXEC sp_addsrvrolemember N'BOARDWALK_APPLICATION_USER', securityadmin
+GO
+
+EXEC sp_addsrvrolemember N'BOARDWALK_APPLICATION_USER', serveradmin
+GO
+
+EXEC sp_addsrvrolemember N'BOARDWALK_APPLICATION_USER', setupadmin
+GO
+
+EXEC sp_addsrvrolemember N'BOARDWALK_APPLICATION_USER', processadmin
+GO
+
+EXEC sp_addsrvrolemember N'BOARDWALK_APPLICATION_USER', diskadmin
+GO
+
+EXEC sp_addsrvrolemember N'BOARDWALK_APPLICATION_USER', dbcreator
+GO
+
+
+---------------------------------------USER LOGING FOR DB ACESS--------------------------------------------------------------------
+
+USE NEW_COMMUNICATOR_TEST
+GO
+
+if not exists (select * from master.dbo.syslogins where loginname = N'BOARDWALK_APPLICATION_USER')
+BEGIN
+	declare @logindb NVARCHAR(132), @loginlang NVARCHAR(132) select @logindb = N'NEW_COMMUNICATOR_TEST', @loginlang = N'us_english'
+	exec sp_addlogin N'BOARDWALK_APPLICATION_USER', 'BOARDWALK_APPLICATION123', @logindb, @loginlang
+END
+GO
+
+if not exists (select * from dbo.sysusers where name = N'BOARDWALK_APPLICATION_USER' and uid < 16382)
+	EXEC sp_grantdbaccess N'BOARDWALK_APPLICATION_USER', N'BOARDWALK_APPLICATION_USER'
+GO
+
+exec sp_addrolemember N'db_datareader', N'BOARDWALK_APPLICATION_USER'
+GO
+
+exec sp_addrolemember N'db_datawriter', N'BOARDWALK_APPLICATION_USER'
+GO
+
+
+declare curse cursor for select name from sysobjects where type='P'
+
+OPEN CURSE
+declare @proc NVARCHAR(100)
+declare @stmt NVARCHAR(200)
+
+fetch next from curse into @proc
+while @@fetch_status=0 
+begin
+set @stmt='grant execute on '+@proc+' to BOARDWALK_APPLICATION_USER'
+exec SP_EXECUTESQL @STMT
+print @stmt
+fetch next from curse into @proc
+end
+
+close curse
+deallocate curse
